@@ -72,8 +72,8 @@ header {
 }
 
 #map {
-    height: min(65vh, 600px);
-    min-height: 360px;
+    height: min(65vh, 650px);
+    min-height: 380px;
     width: 100%;
     border-radius: 12px;
     z-index: 1;
@@ -97,7 +97,12 @@ input {
 button {
     font-weight: bold;
     cursor: pointer;
-    min-height: 46px;
+    min-height: 48px;
+    transition: .2s;
+}
+
+button:active {
+    transform: scale(.98);
 }
 
 .start {
@@ -138,6 +143,19 @@ button {
     font-size: 25px !important;
 }
 
+.map-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.map-hint {
+    color: #91a4bd;
+    font-size: 13px;
+}
+
 @media(max-width:600px) {
     header {
         padding: 14px;
@@ -160,12 +178,16 @@ button {
     }
 
     #map {
-        height: 55vh;
-        min-height: 360px;
+        height: 58vh;
+        min-height: 380px;
     }
 
     .panel {
         padding: 12px;
+    }
+
+    button {
+        min-height: 50px;
     }
 }
 </style>
@@ -182,12 +204,13 @@ button {
 
 <div class="container">
 
-    <h2 style="margin-bottom:10px">GPS boshqaruv paneli</h2>
+    <h2 style="margin-bottom:10px">GEOTRACKER PRO</h2>
 
     <p style="color:#91a4bd;margin-bottom:18px">
         Jonli foydalanuvchilar xaritasi
     </p>
 
+    <!-- STATISTIKA -->
     <div class="stats">
 
         <div class="stat">
@@ -207,9 +230,26 @@ button {
 
     </div>
 
+    <!-- XARITA BIRINCHI -->
     <div class="panel">
 
-        <h3>👤 Foydalanuvchi</h3>
+        <div class="map-heading">
+            <h3>🗺️ Jonli xarita</h3>
+            <span class="map-hint">LIVE GPS</span>
+        </div>
+
+        <div id="map"></div>
+
+    </div>
+
+    <!-- BOSHQARUV TUGMALARI PASTDA -->
+    <div class="panel">
+
+        <h3 style="margin-bottom:8px">👤 GPS boshqaruvi</h3>
+
+        <p style="color:#91a4bd;font-size:14px">
+            Ismingizni kiriting va joylashuvingizni ulashish uchun GPS ni yoqing.
+        </p>
 
         <input
             id="username"
@@ -234,16 +274,6 @@ button {
         <p id="message">
             Ismingizni kiriting va GPS ni yoqing.
         </p>
-
-    </div>
-
-    <div class="panel">
-
-        <h3 style="margin-bottom:15px">
-            🗺️ Barcha foydalanuvchilar
-        </h3>
-
-        <div id="map"></div>
 
     </div>
 
@@ -293,28 +323,9 @@ const onlineCount = document.getElementById('onlineCount');
 const gpsCount = document.getElementById('gpsCount');
 const message = document.getElementById('message');
 
-socket.on('connect', () => {
-    connectionText.textContent = 'ULANGAN';
-    serverStatus.textContent = 'ONLINE';
-
-    // GPS avval yoqilgan bo'lsa, qayta ulanishda yuborish
-    if (watchId !== null && currentPosition) {
-        sendMyLocation();
-    }
-});
-
-socket.on('disconnect', () => {
-    connectionText.textContent = 'UZILGAN';
-    serverStatus.textContent = 'OFFLINE';
-});
-
-socket.on('online_count', data => {
-    onlineCount.textContent = data.count;
-});
-
 
 // ===================================
-// FOYDALANUVCHI BELGILARI
+// GPS HOLATI
 // ===================================
 
 const userMarkers = {};
@@ -326,8 +337,41 @@ let myName = '';
 let firstLocation = true;
 
 
-// Ismni xavfsiz ko'rsatish
+// ===================================
+// SOCKET ULANISHI
+// ===================================
+
+socket.on('connect', () => {
+
+    connectionText.textContent = 'ULANGAN';
+    serverStatus.textContent = 'ONLINE';
+
+    if (watchId !== null && currentPosition) {
+        sendMyLocation();
+    }
+
+});
+
+socket.on('disconnect', () => {
+
+    connectionText.textContent = 'UZILGAN';
+    serverStatus.textContent = 'OFFLINE';
+
+});
+
+socket.on('online_count', data => {
+
+    onlineCount.textContent = data.count;
+
+});
+
+
+// ===================================
+// ISMNI XAVFSIZ KO'RSATISH
+// ===================================
+
 function escapeHTML(value) {
+
     return String(value).replace(/[&<>"']/g, char => ({
         '&': '&amp;',
         '<': '&lt;',
@@ -335,6 +379,7 @@ function escapeHTML(value) {
         '"': '&quot;',
         "'": '&#39;'
     })[char]);
+
 }
 
 
@@ -391,7 +436,7 @@ function renderLocations(data) {
     });
 
 
-    // Serverdan o'chirilgan foydalanuvchilar belgilarini olib tashlash
+    // O'chirilgan GPS belgilarini olib tashlash
     Object.keys(userMarkers).forEach(id => {
 
         if (!activeIds.has(id)) {
@@ -404,6 +449,7 @@ function renderLocations(data) {
     });
 
     gpsCount.textContent = locations.length;
+
 }
 
 socket.on('locations_update', renderLocations);
@@ -437,13 +483,17 @@ function startGPS() {
     myName = document.getElementById('username').value.trim();
 
     if (!myName) {
+
         message.textContent = 'Avval ismingizni kiriting!';
         return;
+
     }
 
     if (!navigator.geolocation) {
+
         message.textContent = 'Brauzeringiz GPS ni qo‘llab-quvvatlamaydi.';
         return;
+
     }
 
     if (watchId !== null) {
@@ -478,7 +528,7 @@ function startGPS() {
 
             myMarker.bindPopup('👤 ' + escapeHTML(myName));
 
-            // Xarita faqat birinchi aniqlanganda markazga keladi
+            // Faqat birinchi GPS aniqlanganda xaritani markazga oladi
             if (firstLocation) {
 
                 map.setView(point, 16);
@@ -497,8 +547,10 @@ function startGPS() {
         error => {
 
             if (watchId !== null) {
+
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
+
             }
 
             message.textContent =
@@ -545,6 +597,7 @@ function stopGPS() {
     firstLocation = true;
 
     message.textContent = 'GPS o‘chirildi.';
+
 }
 
 
