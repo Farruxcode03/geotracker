@@ -1,9 +1,10 @@
 
 import os
 from pathlib import Path
+from threading import Lock
 
-from flask import Flask, Response, jsonify
-from flask_socketio import SocketIO
+from flask import Flask, Response, jsonify, request
+from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 
@@ -28,6 +29,35 @@ CORS(app, resources={
     }
 })
 
+# Online brauzer ulanishlari
+online_users = set()
+online_lock = Lock()
+
+
+def broadcast_online_count():
+    with online_lock:
+        count = len(online_users)
+
+    socketio.emit("online_count", {
+        "count": count
+    })
+
+
+@socketio.on("connect")
+def handle_connect(auth=None):
+    with online_lock:
+        online_users.add(request.sid)
+
+    broadcast_online_count()
+
+
+@socketio.on("disconnect")
+def handle_disconnect(reason=None):
+    with online_lock:
+        online_users.discard(request.sid)
+
+    broadcast_online_count()
+
 
 @app.route("/")
 def home():
@@ -41,26 +71,10 @@ def home():
 
 @app.route("/api/status")
 def status():
-    try:
-        with db.engine.connect() as connection:
-            connection.exec_driver_sql("SELECT 1")
-
-        return jsonify({
-            "status": "online",
-            "database": "connected"
-        })
-
-    except Exception as error:
-        app.logger.exception("Database connection error")
-
-        return jsonify({
-            "status": "error",
-            "message": str(error)
-        }), 500
-
-
-with app.app_context():
-    db.create_all()
+    return jsonify({
+        "status": "online",
+        "online_users": len(online_users)
+    })
 
 
 if __name__ == "__main__":
