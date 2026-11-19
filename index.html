@@ -9,116 +9,163 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-
-body{
-    background:#080d19;
-    color:white;
-    font-family:Arial,sans-serif;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-header{
-    padding:16px;
-    background:#111d30;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
+body {
+    background: #080d19;
+    color: white;
+    font-family: Arial, sans-serif;
 }
 
-.logo{
-    color:#22d3ee;
-    font-size:22px;
-    font-weight:bold;
+header {
+    padding: 16px;
+    background: #111d30;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.container{
-    max-width:1100px;
-    margin:auto;
-    padding:16px;
+.logo {
+    color: #22d3ee;
+    font-size: 22px;
+    font-weight: bold;
 }
 
-.panel{
-    background:#111d30;
-    border:1px solid #263751;
-    padding:16px;
-    border-radius:14px;
-    margin-bottom:18px;
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 15px;
 }
 
-.stats{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px;
-    margin-bottom:18px;
+.panel {
+    background: #111d30;
+    border: 1px solid #263751;
+    padding: 16px;
+    border-radius: 14px;
+    margin-bottom: 18px;
 }
 
-.stat{
-    background:#15243a;
-    padding:16px;
-    border-radius:12px;
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
 }
 
-.stat span{
-    display:block;
-    color:#22d3ee;
-    font-size:23px;
-    margin-top:10px;
+.stat {
+    background: #15243a;
+    padding: 16px;
+    border-radius: 12px;
 }
 
-#map{
+.stat span {
+    display: block;
+    color: #22d3ee;
+    font-size: 23px;
+    margin-top: 10px;
+}
+
+#map {
     height: min(65vh, 600px);
-    min-height:360px;
-    width:100%;
-    border-radius:12px;
-    z-index:1;
-    overflow:hidden;
-    touch-action:pan-x pan-y;
+    min-height: 360px;
+    width: 100%;
+    border-radius: 12px;
+    z-index: 1;
 }
 
-button{
-    padding:13px 18px;
-    border:0;
-    border-radius:8px;
-    font-weight:bold;
-    cursor:pointer;
-    margin:10px 5px 0 0;
-    min-height:44px;
+input, button {
+    width: 100%;
+    padding: 14px;
+    border: 0;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 16px;
 }
 
-.start{background:#10c68b;color:white}
-.stop{background:#df4059;color:white}
-.locate{background:#2478dc;color:white}
-
-#message{
-    color:#9eb2ce;
-    margin-top:14px;
-    line-height:1.5;
+input {
+    background: #20324b;
+    color: white;
+    border: 1px solid #38516f;
 }
 
-.leaflet-control-zoom a{
-    width:42px!important;
-    height:42px!important;
-    line-height:42px!important;
-    font-size:25px!important;
+button {
+    font-weight: bold;
+    cursor: pointer;
+    min-height: 46px;
 }
 
-@media(max-width:600px){
-    header{padding:14px}
-    .logo{font-size:19px}
-    .container{padding:10px}
-    .stats{grid-template-columns:1fr}
-    .stat{padding:13px}
-    #map{
-        height:55vh;
-        min-height:360px;
-        border-radius:10px;
+.start {
+    background: #10c68b;
+    color: white;
+}
+
+.stop {
+    background: #df4059;
+    color: white;
+}
+
+.locate {
+    background: #2478dc;
+    color: white;
+}
+
+#message {
+    color: #9eb2ce;
+    margin-top: 14px;
+    line-height: 1.5;
+}
+
+.user-label {
+    background: #10c68b;
+    color: white;
+    border: 2px solid white;
+    border-radius: 20px;
+    padding: 5px 9px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px #0008;
+}
+
+.leaflet-control-zoom a {
+    width: 42px !important;
+    height: 42px !important;
+    line-height: 42px !important;
+    font-size: 25px !important;
+}
+
+@media(max-width:600px) {
+    header {
+        padding: 14px;
     }
-    .panel{padding:12px}
-    button{
-        width:100%;
-        margin:8px 0 0;
+
+    .logo {
+        font-size: 19px;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .stat {
+        padding: 13px;
+    }
+
+    #map {
+        height: 55vh;
+        min-height: 360px;
+    }
+
+    .panel {
+        padding: 12px;
     }
 }
 </style>
@@ -136,11 +183,13 @@ button{
 <div class="container">
 
     <h2 style="margin-bottom:10px">GPS boshqaruv paneli</h2>
-    <p style="color:#91a4bd;margin-bottom:20px">
-        Jonli joylashuv xaritasi
+
+    <p style="color:#91a4bd;margin-bottom:18px">
+        Jonli foydalanuvchilar xaritasi
     </p>
 
     <div class="stats">
+
         <div class="stat">
             Online foydalanuvchilar
             <span id="onlineCount">0</span>
@@ -152,169 +201,393 @@ button{
         </div>
 
         <div class="stat">
-            Mening GPS
-            <span id="gps">OFF</span>
+            GPS foydalanuvchilar
+            <span id="gpsCount">0</span>
         </div>
+
     </div>
 
     <div class="panel">
-        <h3 style="margin-bottom:15px">🗺️ Jonli xarita</h3>
 
-        <div id="map"></div>
+        <h3>👤 Foydalanuvchi</h3>
 
-        <button class="start" onclick="startGPS()">
-            GPS YOQISH
+        <input
+            id="username"
+            type="text"
+            maxlength="40"
+            placeholder="Ismingizni kiriting"
+            autocomplete="nickname"
+        >
+
+        <button class="start" id="startButton">
+            📍 GPS YOQISH
         </button>
 
-        <button class="stop" onclick="stopGPS()">
+        <button class="stop" id="stopButton">
             GPS O'CHIRISH
         </button>
 
-        <button class="locate" onclick="goToMyLocation()">
+        <button class="locate" id="locateButton">
             📍 MENING JOYIMGA QAYTISH
         </button>
 
-        <p id="message">GPS hali yoqilmagan</p>
+        <p id="message">
+            Ismingizni kiriting va GPS ni yoqing.
+        </p>
+
     </div>
+
+    <div class="panel">
+
+        <h3 style="margin-bottom:15px">
+            🗺️ Barcha foydalanuvchilar
+        </h3>
+
+        <div id="map"></div>
+
+    </div>
+
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <script>
+
+// ===================================
 // XARITA
+// ===================================
+
 const map = L.map('map', {
     zoomControl: true,
     dragging: true,
     touchZoom: true,
-    doubleClickZoom: true,
-    scrollWheelZoom: true
-}).setView([41.2995,69.2401],12);
+    scrollWheelZoom: true,
+    doubleClickZoom: true
+}).setView([41.2995, 69.2401], 12);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'© OpenStreetMap',
-    maxZoom:19
-}).addTo(map);
+L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+    }
+).addTo(map);
 
-// TELEFONDA XARITA O'LCHAMINI TO'G'RILASH
 setTimeout(() => {
     map.invalidateSize();
-}, 300);
+}, 500);
 
-// SOCKET
+
+// ===================================
+// SERVER ULANISHI
+// ===================================
+
 const socket = io({
-    transports:['websocket','polling']
+    transports: ['websocket', 'polling']
 });
 
-socket.on('connect',()=>{
-    document.getElementById('connection').textContent='ULANGAN';
-    document.getElementById('serverStatus').textContent='ONLINE';
+const connectionText = document.getElementById('connection');
+const serverStatus = document.getElementById('serverStatus');
+const onlineCount = document.getElementById('onlineCount');
+const gpsCount = document.getElementById('gpsCount');
+const message = document.getElementById('message');
+
+socket.on('connect', () => {
+    connectionText.textContent = 'ULANGAN';
+    serverStatus.textContent = 'ONLINE';
+
+    // GPS avval yoqilgan bo'lsa, qayta ulanishda yuborish
+    if (watchId !== null && currentPosition) {
+        sendMyLocation();
+    }
 });
 
-socket.on('disconnect',()=>{
-    document.getElementById('connection').textContent='UZILGAN';
-    document.getElementById('serverStatus').textContent='OFFLINE';
+socket.on('disconnect', () => {
+    connectionText.textContent = 'UZILGAN';
+    serverStatus.textContent = 'OFFLINE';
 });
 
-socket.on('online_count',data=>{
-    document.getElementById('onlineCount').textContent=data.count;
+socket.on('online_count', data => {
+    onlineCount.textContent = data.count;
 });
 
-// GPS
-let marker = null;
+
+// ===================================
+// FOYDALANUVCHI BELGILARI
+// ===================================
+
+const userMarkers = {};
+
+let myMarker = null;
 let watchId = null;
 let currentPosition = null;
+let myName = '';
 let firstLocation = true;
 
-function startGPS(){
 
-    if(!navigator.geolocation){
-        document.getElementById('message').textContent=
-        'GPS qo‘llab-quvvatlanmaydi';
+// Ismni xavfsiz ko'rsatish
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+}
+
+
+// ===================================
+// BARCHA GPS FOYDALANUVCHILARI
+// ===================================
+
+function renderLocations(data) {
+
+    const locations = data.locations || [];
+    const activeIds = new Set();
+
+    locations.forEach(user => {
+
+        if (!user.id) return;
+
+        const lat = Number(user.lat);
+        const lon = Number(user.lon);
+
+        if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lon) ||
+            lat < -90 || lat > 90 ||
+            lon < -180 || lon > 180
+        ) return;
+
+        activeIds.add(user.id);
+
+        const point = [lat, lon];
+        const safeName = escapeHTML(user.name || 'Foydalanuvchi');
+
+        if (!userMarkers[user.id]) {
+
+            userMarkers[user.id] = L.marker(point).addTo(map);
+
+        } else {
+
+            userMarkers[user.id].setLatLng(point);
+
+        }
+
+        userMarkers[user.id].bindTooltip(
+            safeName,
+            {
+                permanent: true,
+                direction: 'top',
+                offset: [0, -10],
+                className: 'user-label'
+            }
+        );
+
+        userMarkers[user.id].bindPopup('👤 ' + safeName);
+
+    });
+
+
+    // Serverdan o'chirilgan foydalanuvchilar belgilarini olib tashlash
+    Object.keys(userMarkers).forEach(id => {
+
+        if (!activeIds.has(id)) {
+
+            map.removeLayer(userMarkers[id]);
+            delete userMarkers[id];
+
+        }
+
+    });
+
+    gpsCount.textContent = locations.length;
+}
+
+socket.on('locations_update', renderLocations);
+
+
+// ===================================
+// GPS MA'LUMOTINI SERVERGA YUBORISH
+// ===================================
+
+function sendMyLocation() {
+
+    if (!socket.connected || !currentPosition || !myName) {
         return;
     }
 
-    if(watchId !== null) return;
-
-    document.getElementById('message').textContent=
-    'GPS joylashuvni aniqlamoqda...';
-
-    watchId = navigator.geolocation.watchPosition(position=>{
-
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
-        currentPosition = [lat,lon];
-
-        if(!marker){
-            marker = L.marker(currentPosition)
-                .addTo(map)
-                .bindPopup('Mening joylashuvim');
-        }else{
-            marker.setLatLng(currentPosition);
-        }
-
-        // FAQAT BIRINCHI GPS ANIQLANGANDA XARITANI MARKAZGA OLADI
-        // KEYINGI YANGILANISHLARDA XARITA QAYTA SURILMAYDI
-        if(firstLocation){
-            map.setView(currentPosition,16);
-            marker.openPopup();
-            firstLocation = false;
-        }
-
-        document.getElementById('gps').textContent='ON';
-
-        document.getElementById('message').textContent=
-        'GPS ishlayapti. Latitude: '+lat.toFixed(6)+
-        ' | Longitude: '+lon.toFixed(6);
-
-    },error=>{
-
-        watchId = null;
-
-        document.getElementById('gps').textContent='OFF';
-
-        document.getElementById('message').textContent=
-        'GPS ruxsatini tekshiring. Xato: '+error.message;
-
-    },{
-        enableHighAccuracy:true,
-        maximumAge:2000,
-        timeout:15000
+    socket.emit('location_update', {
+        name: myName,
+        lat: currentPosition.lat,
+        lon: currentPosition.lon
     });
+
 }
 
-// ISTALGAN PAYT O'Z JOYINGIZGA QAYTISH
-function goToMyLocation(){
 
-    if(currentPosition){
-        map.setView(currentPosition,16);
-        if(marker) marker.openPopup();
-    }else{
-        document.getElementById('message').textContent=
-        'Avval GPS ni yoqing';
+// ===================================
+// GPS YOQISH
+// ===================================
+
+function startGPS() {
+
+    myName = document.getElementById('username').value.trim();
+
+    if (!myName) {
+        message.textContent = 'Avval ismingizni kiriting!';
+        return;
     }
+
+    if (!navigator.geolocation) {
+        message.textContent = 'Brauzeringiz GPS ni qo‘llab-quvvatlamaydi.';
+        return;
+    }
+
+    if (watchId !== null) {
+        return;
+    }
+
+    message.textContent = 'GPS joylashuvni aniqlamoqda...';
+
+    watchId = navigator.geolocation.watchPosition(
+
+        position => {
+
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            currentPosition = {
+                lat: lat,
+                lon: lon
+            };
+
+            const point = [lat, lon];
+
+            if (!myMarker) {
+
+                myMarker = L.marker(point).addTo(map);
+
+            } else {
+
+                myMarker.setLatLng(point);
+
+            }
+
+            myMarker.bindPopup('👤 ' + escapeHTML(myName));
+
+            // Xarita faqat birinchi aniqlanganda markazga keladi
+            if (firstLocation) {
+
+                map.setView(point, 16);
+                myMarker.openPopup();
+                firstLocation = false;
+
+            }
+
+            message.textContent =
+                'GPS yoqilgan. Joylashuvingiz ulashilmoqda.';
+
+            sendMyLocation();
+
+        },
+
+        error => {
+
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+
+            message.textContent =
+                'GPS ruxsatini tekshiring: ' + error.message;
+
+        },
+
+        {
+            enableHighAccuracy: true,
+            maximumAge: 2000,
+            timeout: 15000
+        }
+
+    );
+
 }
 
-// GPS O'CHIRISH
-function stopGPS(){
 
-    if(watchId !== null){
+// ===================================
+// GPS O'CHIRISH
+// ===================================
+
+function stopGPS() {
+
+    if (watchId !== null) {
+
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
+
     }
 
-    if(marker){
-        map.removeLayer(marker);
-        marker = null;
+    if (socket.connected) {
+        socket.emit('location_stop');
+    }
+
+    if (myMarker) {
+
+        map.removeLayer(myMarker);
+        myMarker = null;
+
     }
 
     currentPosition = null;
     firstLocation = true;
 
-    document.getElementById('gps').textContent='OFF';
-    document.getElementById('message').textContent='GPS o‘chirildi';
+    message.textContent = 'GPS o‘chirildi.';
 }
+
+
+// ===================================
+// O'Z JOYIGA QAYTISH
+// ===================================
+
+function goToMyLocation() {
+
+    if (!currentPosition) {
+
+        message.textContent = 'Avval GPS ni yoqing.';
+        return;
+
+    }
+
+    const point = [
+        currentPosition.lat,
+        currentPosition.lon
+    ];
+
+    map.setView(point, 16);
+
+    if (myMarker) {
+        myMarker.openPopup();
+    }
+
+}
+
+
+// ===================================
+// TUGMALAR
+// ===================================
+
+document.getElementById('startButton')
+    .addEventListener('click', startGPS);
+
+document.getElementById('stopButton')
+    .addEventListener('click', stopGPS);
+
+document.getElementById('locateButton')
+    .addEventListener('click', goToMyLocation);
+
 </script>
 
 </body>
