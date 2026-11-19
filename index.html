@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GEOTRACKER PRO</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080d19;color:white;font-family:Arial}
+header{padding:20px;background:#111d30;display:flex;justify-content:space-between}
+.logo{color:#22d3ee;font-size:22px;font-weight:bold}
+.container{max-width:1100px;margin:auto;padding:20px}
+.panel{background:#111d30;border:1px solid #263751;padding:20px;border-radius:14px;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.stat{background:#15243a;padding:18px;border-radius:12px}
+.stat span{display:block;color:#22d3ee;font-size:23px;margin-top:10px}
+#map{height:480px;width:100%;border-radius:12px;z-index:1}
+button{padding:13px 18px;border:0;border-radius:8px;font-weight:bold;cursor:pointer;margin:10px 5px 0 0}
+.start{background:#10c68b;color:white}
+.stop{background:#df4059;color:white}
+#message{color:#9eb2ce;margin-top:14px}
+@media(max-width:600px){
+.stats{grid-template-columns:1fr}
+#map{height:400px}
+}
+</style>
+</head>
+
+<body>
+<header>
+<div class="logo">📍 GEOTRACKER PRO</div>
+<div style="color:#35e6a0">● ONLINE</div>
+</header>
+
+<div class="container">
+<h2 style="margin-bottom:10px">GPS boshqaruv paneli</h2>
+<p style="color:#91a4bd;margin-bottom:20px">Jonli joylashuv xaritasi</p>
+
+<div class="stats">
+<div class="stat">Foydalanuvchilar<span>1</span></div>
+<div class="stat">Holat<span>ONLINE</span></div>
+<div class="stat">GPS<span id="gps">OFF</span></div>
+</div>
+
+<div class="panel">
+<h3 style="margin-bottom:15px">🗺️ Jonli xarita</h3>
+<div id="map"></div>
+
+<button class="start" onclick="startGPS()">GPS YOQISH</button>
+<button class="stop" onclick="stopGPS()">GPS O'CHIRISH</button>
+
+<p id="message">GPS hali yoqilmagan</p>
+</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const map=L.map('map').setView([41.2995,69.2401],12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+attribution:'© OpenStreetMap'
+}).addTo(map);
+
+let marker=null;
+let watchId=null;
+
+function startGPS(){
+if(!navigator.geolocation){
+document.getElementById('message').textContent='GPS qo‘llab-quvvatlanmaydi';
+return;
+}
+
+if(watchId!==null)return;
+
+watchId=navigator.geolocation.watchPosition(position=>{
+const lat=position.coords.latitude;
+const lon=position.coords.longitude;
+
+if(!marker){
+marker=L.marker([lat,lon]).addTo(map)
+.bindPopup('Mening joylashuvim').openPopup();
+}else{
+marker.setLatLng([lat,lon]);
+}
+
+map.setView([lat,lon],16);
+
+document.getElementById('gps').textContent='ON';
+document.getElementById('message').textContent=
+'Latitude: '+lat.toFixed(6)+' | Longitude: '+lon.toFixed(6);
+
+},error=>{
+document.getElementById('message').textContent=
+'GPS ruxsatini tekshiring. Xato: '+error.message;
+},{
+enableHighAccuracy:true,
+maximumAge:2000,
+timeout:15000
+});
+}
+
+function stopGPS(){
+if(watchId!==null){
+navigator.geolocation.clearWatch(watchId);
+watchId=null;
+}
+
+if(marker){
+map.removeLayer(marker);
+marker=null;
+}
+
+document.getElementById('gps').textContent='OFF';
+document.getElementById('message').textContent='GPS o‘chirildi';
+}
+</script>
+</body>
+</html>
