@@ -10,141 +10,312 @@
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#080d19;color:white;font-family:Arial}
-header{padding:20px;background:#111d30;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.logo{color:#22d3ee;font-size:22px;font-weight:bold}
-.container{max-width:1100px;margin:auto;padding:20px}
-.panel{background:#111d30;border:1px solid #263751;padding:20px;border-radius:14px;margin-bottom:18px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
-.stat{background:#15243a;padding:18px;border-radius:12px}
-.stat span{display:block;color:#22d3ee;font-size:23px;margin-top:10px}
-#map{height:480px;width:100%;border-radius:12px;z-index:1}
-button{padding:13px 18px;border:0;border-radius:8px;font-weight:bold;cursor:pointer;margin:10px 5px 0 0}
+
+body{
+    background:#080d19;
+    color:white;
+    font-family:Arial,sans-serif;
+}
+
+header{
+    padding:16px;
+    background:#111d30;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.logo{
+    color:#22d3ee;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.container{
+    max-width:1100px;
+    margin:auto;
+    padding:16px;
+}
+
+.panel{
+    background:#111d30;
+    border:1px solid #263751;
+    padding:16px;
+    border-radius:14px;
+    margin-bottom:18px;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:18px;
+}
+
+.stat{
+    background:#15243a;
+    padding:16px;
+    border-radius:12px;
+}
+
+.stat span{
+    display:block;
+    color:#22d3ee;
+    font-size:23px;
+    margin-top:10px;
+}
+
+#map{
+    height: min(65vh, 600px);
+    min-height:360px;
+    width:100%;
+    border-radius:12px;
+    z-index:1;
+    overflow:hidden;
+    touch-action:pan-x pan-y;
+}
+
+button{
+    padding:13px 18px;
+    border:0;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer;
+    margin:10px 5px 0 0;
+    min-height:44px;
+}
+
 .start{background:#10c68b;color:white}
 .stop{background:#df4059;color:white}
-#message{color:#9eb2ce;margin-top:14px}
+.locate{background:#2478dc;color:white}
+
+#message{
+    color:#9eb2ce;
+    margin-top:14px;
+    line-height:1.5;
+}
+
+.leaflet-control-zoom a{
+    width:42px!important;
+    height:42px!important;
+    line-height:42px!important;
+    font-size:25px!important;
+}
+
 @media(max-width:600px){
-.stats{grid-template-columns:1fr}
-#map{height:400px}
+    header{padding:14px}
+    .logo{font-size:19px}
+    .container{padding:10px}
+    .stats{grid-template-columns:1fr}
+    .stat{padding:13px}
+    #map{
+        height:55vh;
+        min-height:360px;
+        border-radius:10px;
+    }
+    .panel{padding:12px}
+    button{
+        width:100%;
+        margin:8px 0 0;
+    }
 }
 </style>
 </head>
 
 <body>
+
 <header>
-<div class="logo">📍 GEOTRACKER PRO</div>
-<div style="color:#35e6a0">● <span id="connection">ULANMOQDA</span></div>
+    <div class="logo">📍 GEOTRACKER PRO</div>
+    <div style="color:#35e6a0">
+        ● <span id="connection">ULANMOQDA</span>
+    </div>
 </header>
 
 <div class="container">
-<h2 style="margin-bottom:10px">GPS boshqaruv paneli</h2>
-<p style="color:#91a4bd;margin-bottom:20px">Jonli joylashuv xaritasi</p>
 
-<div class="stats">
-<div class="stat">Online foydalanuvchilar
-<span id="onlineCount">0</span>
-</div>
-<div class="stat">Server holati
-<span id="serverStatus">TEKSHIRILMOQDA</span>
-</div>
-<div class="stat">Mening GPS
-<span id="gps">OFF</span>
-</div>
-</div>
+    <h2 style="margin-bottom:10px">GPS boshqaruv paneli</h2>
+    <p style="color:#91a4bd;margin-bottom:20px">
+        Jonli joylashuv xaritasi
+    </p>
 
-<div class="panel">
-<h3 style="margin-bottom:15px">🗺️ Jonli xarita</h3>
-<div id="map"></div>
+    <div class="stats">
+        <div class="stat">
+            Online foydalanuvchilar
+            <span id="onlineCount">0</span>
+        </div>
 
-<button class="start" onclick="startGPS()">GPS YOQISH</button>
-<button class="stop" onclick="stopGPS()">GPS O'CHIRISH</button>
+        <div class="stat">
+            Server holati
+            <span id="serverStatus">TEKSHIRILMOQDA</span>
+        </div>
 
-<p id="message">GPS hali yoqilmagan</p>
-</div>
+        <div class="stat">
+            Mening GPS
+            <span id="gps">OFF</span>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3 style="margin-bottom:15px">🗺️ Jonli xarita</h3>
+
+        <div id="map"></div>
+
+        <button class="start" onclick="startGPS()">
+            GPS YOQISH
+        </button>
+
+        <button class="stop" onclick="stopGPS()">
+            GPS O'CHIRISH
+        </button>
+
+        <button class="locate" onclick="goToMyLocation()">
+            📍 MENING JOYIMGA QAYTISH
+        </button>
+
+        <p id="message">GPS hali yoqilmagan</p>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <script>
-const map=L.map('map').setView([41.2995,69.2401],12);
+// XARITA
+const map = L.map('map', {
+    zoomControl: true,
+    dragging: true,
+    touchZoom: true,
+    doubleClickZoom: true,
+    scrollWheelZoom: true
+}).setView([41.2995,69.2401],12);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-attribution:'© OpenStreetMap'
+    attribution:'© OpenStreetMap',
+    maxZoom:19
 }).addTo(map);
 
-const socket=io({
-transports:['websocket','polling']
+// TELEFONDA XARITA O'LCHAMINI TO'G'RILASH
+setTimeout(() => {
+    map.invalidateSize();
+}, 300);
+
+// SOCKET
+const socket = io({
+    transports:['websocket','polling']
 });
 
 socket.on('connect',()=>{
-document.getElementById('connection').textContent='ULANGAN';
-document.getElementById('serverStatus').textContent='ONLINE';
+    document.getElementById('connection').textContent='ULANGAN';
+    document.getElementById('serverStatus').textContent='ONLINE';
 });
 
 socket.on('disconnect',()=>{
-document.getElementById('connection').textContent='UZILGAN';
-document.getElementById('serverStatus').textContent='OFFLINE';
+    document.getElementById('connection').textContent='UZILGAN';
+    document.getElementById('serverStatus').textContent='OFFLINE';
 });
 
 socket.on('online_count',data=>{
-document.getElementById('onlineCount').textContent=data.count;
+    document.getElementById('onlineCount').textContent=data.count;
 });
 
-let marker=null;
-let watchId=null;
+// GPS
+let marker = null;
+let watchId = null;
+let currentPosition = null;
+let firstLocation = true;
 
 function startGPS(){
-if(!navigator.geolocation){
-document.getElementById('message').textContent='GPS qo‘llab-quvvatlanmaydi';
-return;
+
+    if(!navigator.geolocation){
+        document.getElementById('message').textContent=
+        'GPS qo‘llab-quvvatlanmaydi';
+        return;
+    }
+
+    if(watchId !== null) return;
+
+    document.getElementById('message').textContent=
+    'GPS joylashuvni aniqlamoqda...';
+
+    watchId = navigator.geolocation.watchPosition(position=>{
+
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        currentPosition = [lat,lon];
+
+        if(!marker){
+            marker = L.marker(currentPosition)
+                .addTo(map)
+                .bindPopup('Mening joylashuvim');
+        }else{
+            marker.setLatLng(currentPosition);
+        }
+
+        // FAQAT BIRINCHI GPS ANIQLANGANDA XARITANI MARKAZGA OLADI
+        // KEYINGI YANGILANISHLARDA XARITA QAYTA SURILMAYDI
+        if(firstLocation){
+            map.setView(currentPosition,16);
+            marker.openPopup();
+            firstLocation = false;
+        }
+
+        document.getElementById('gps').textContent='ON';
+
+        document.getElementById('message').textContent=
+        'GPS ishlayapti. Latitude: '+lat.toFixed(6)+
+        ' | Longitude: '+lon.toFixed(6);
+
+    },error=>{
+
+        watchId = null;
+
+        document.getElementById('gps').textContent='OFF';
+
+        document.getElementById('message').textContent=
+        'GPS ruxsatini tekshiring. Xato: '+error.message;
+
+    },{
+        enableHighAccuracy:true,
+        maximumAge:2000,
+        timeout:15000
+    });
 }
 
-if(watchId!==null)return;
+// ISTALGAN PAYT O'Z JOYINGIZGA QAYTISH
+function goToMyLocation(){
 
-watchId=navigator.geolocation.watchPosition(position=>{
-const lat=position.coords.latitude;
-const lon=position.coords.longitude;
-
-if(!marker){
-marker=L.marker([lat,lon]).addTo(map)
-.bindPopup('Mening joylashuvim').openPopup();
-}else{
-marker.setLatLng([lat,lon]);
+    if(currentPosition){
+        map.setView(currentPosition,16);
+        if(marker) marker.openPopup();
+    }else{
+        document.getElementById('message').textContent=
+        'Avval GPS ni yoqing';
+    }
 }
 
-map.setView([lat,lon],16);
-
-document.getElementById('gps').textContent='ON';
-document.getElementById('message').textContent=
-'GPS ishlayapti. Latitude: '+lat.toFixed(6)+
-' | Longitude: '+lon.toFixed(6);
-
-},error=>{
-watchId=null;
-document.getElementById('message').textContent=
-'GPS ruxsatini tekshiring. Xato: '+error.message;
-},{
-enableHighAccuracy:true,
-maximumAge:2000,
-timeout:15000
-});
-}
-
+// GPS O'CHIRISH
 function stopGPS(){
-if(watchId!==null){
-navigator.geolocation.clearWatch(watchId);
-watchId=null;
-}
 
-if(marker){
-map.removeLayer(marker);
-marker=null;
-}
+    if(watchId !== null){
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
 
-document.getElementById('gps').textContent='OFF';
-document.getElementById('message').textContent='GPS o‘chirildi';
+    if(marker){
+        map.removeLayer(marker);
+        marker = null;
+    }
+
+    currentPosition = null;
+    firstLocation = true;
+
+    document.getElementById('gps').textContent='OFF';
+    document.getElementById('message').textContent='GPS o‘chirildi';
 }
 </script>
+
 </body>
 </html>
