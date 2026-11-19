@@ -3,6 +3,679 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEOTRACKER GPS — Live GPS</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<style>
+:root {
+  --blue:#00c8ff; --green:#00ff79; --red:#ff315c;
+  --bg:#030816; --panel:rgba(4,18,42,.94);
+}
+* {box-sizing:border-box}
+body {
+  margin:0;color:#fff;
+  background:radial-gradient(ellipse at 50% -20%,#07356b 0%,transparent 50%),
+  radial-gradient(ellipse at 100% 100%,#071b42 0%,transparent 45%),var(--bg);
+  font-family:Arial,sans-serif;min-height:100vh;
+}
+header {
+  display:flex;justify-content:space-between;align-items:center;gap:15px;
+  padding:18px 22px;border-bottom:1px solid #087dbb;
+  background:rgba(1,8,22,.9);box-shadow:0 0 25px #0077ff55;
+}
+.brand {display:flex;align-items:center;gap:13px}
+.brand-icon {font-size:42px;filter:drop-shadow(0 0 12px var(--blue))}
+.brand h1 {margin:0;font-size:clamp(20px,4vw,34px);font-style:italic;
+  letter-spacing:1px;text-shadow:0 0 15px #00bfff}
+.brand h1 span {color:var(--blue)}
+.subtitle {font-size:12px;color:#9bb9df;margin-top:5px}
+.live-pill {border:1px solid var(--green);color:var(--green);padding:7px 13px;
+  border-radius:30px;box-shadow:0 0 15px #00ff7955;font-weight:bold;
+  white-space:nowrap;animation:glow 2s infinite}
+.server {color:#9eb7d7;font-size:13px;text-align:right}
+.server strong {color:var(--green)}
+main {max-width:1500px;margin:auto;padding:16px}
+.stats {display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:15px}
+.stat {background:linear-gradient(130deg,#071b3b,#031022);
+  border:1px solid #087fc5;border-radius:16px;padding:16px;
+  box-shadow:0 0 16px #007bff33;display:flex;align-items:center;gap:14px;min-width:0}
+.stat-icon {font-size:30px;color:var(--blue)}
+.stat-label {font-size:13px;color:#a8c6e9}
+.stat-number {font-size:30px;font-weight:bold;margin-top:5px}
+.green {color:var(--green)} .blue {color:var(--blue)}
+.map-panel {border:2px solid var(--blue);border-radius:19px;overflow:hidden;
+  box-shadow:0 0 18px #00aaff88,inset 0 0 20px #00aaff22;position:relative}
+.map-top {position:absolute;z-index:500;top:13px;left:13px;padding:10px 14px;
+  border-radius:12px;background:#03152beF;border:1px solid #00bfff;
+  box-shadow:0 0 14px #00bfff66;font-weight:bold}
+.map-top span {color:var(--green);margin-left:8px}
+#map {height:min(64vh,650px);min-height:360px;background:#06152b}
+.legend {position:absolute;z-index:500;right:13px;top:13px;padding:11px 14px;
+  background:#03152beF;border:1px solid #078aca;border-radius:12px;
+  font-size:12px;line-height:2}
+.dot {display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}
+.dot.live {background:var(--green);box-shadow:0 0 9px var(--green)}
+.dot.blue {background:var(--blue)}
+.radar {position:absolute;z-index:400;right:20px;bottom:20px;width:90px;height:90px;
+  border-radius:50%;border:1px solid #00ff79aa;
+  background:repeating-radial-gradient(circle,transparent 0 13px,#00ff7944 14px 15px);
+  box-shadow:0 0 15px #00ff7944;pointer-events:none}
+.radar:after {content:"";position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0deg,#00ff7966 65deg,transparent 90deg);
+  animation:spin 3s linear infinite}
+.controls {margin-top:15px;padding:17px;display:grid;
+  grid-template-columns:1.1fr 1fr 1fr 1fr;gap:12px;align-items:center;
+  background:var(--panel);border:1px solid #008dcc;border-radius:17px;
+  box-shadow:0 0 18px #007bff33}
+input {width:100%;min-width:0;padding:15px 13px;color:white;background:#07172d;
+  border:1px solid #078aca;border-radius:12px;outline:none;font-size:15px}
+input:focus {box-shadow:0 0 13px #00bfff88}
+button {cursor:pointer;border:0;border-radius:40px;padding:15px 12px;color:white;
+  font-weight:bold;font-size:14px;min-height:52px;transition:transform .2s,filter .2s}
+button:hover {transform:translateY(-2px);filter:brightness(1.2)}
+button:active {transform:scale(.97)}
+.btn-start {background:linear-gradient(110deg,#00652e,#00c85c);
+  border:1px solid #58ff9d;box-shadow:0 0 18px #00ff7966}
+.btn-stop {background:linear-gradient(110deg,#780b2c,#e90042);
+  border:1px solid #ff6b8b;box-shadow:0 0 18px #ff174466}
+.btn-locate {background:linear-gradient(110deg,#004b9c,#007bff);
+  border:1px solid #4bcaff;box-shadow:0 0 18px #008cff66}
+.message {margin-top:13px;padding:14px 16px;border:1px solid #00a9bd;
+  border-radius:13px;background:#031526;color:#c7eaff;font-size:14px}
+.message b {color:var(--green)}
+footer {text-align:center;color:#718bad;font-size:11px;padding:18px}
+.leaflet-container {font-family:Arial,sans-serif}
+.leaflet-control-zoom a {background:#04172d!important;color:#00c8ff!important;
+  border-color:#078aca!important}
+.user-pin {position:relative;width:42px;height:42px;border-radius:50% 50% 50% 0;
+  transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;
+  border:2px solid white;background:#00aaff;
+  box-shadow:0 0 15px #00bfff,0 0 30px #00bfff77}
+.user-pin span {transform:rotate(45deg);font-size:19px}
+.user-pin.green-pin {background:#00a94f;box-shadow:0 0 15px #00ff79,0 0 30px #00ff7977}
+.user-pin.red-pin {background:#d81943;box-shadow:0 0 15px #ff315c,0 0 30px #ff315c77}
+.user-pin:after {content:"";position:absolute;inset:-9px;border:2px solid currentColor;
+  border-radius:50%;animation:pulse 1.8s infinite;opacity:.7}
+.user-label {background:#031426!important;color:#fff!important;
+  border:1px solid #00bfff!important;border-radius:8px!important;padding:5px 9px!important;
+  font-weight:bold;box-shadow:0 0 12px #00bfff55}
+.leaflet-tooltip:before {display:none}
+@keyframes pulse {0% {transform:scale(.8);opacity:.8} 100% {transform:scale(1.8);opacity:0}}
+@keyframes spin {to {transform:rotate(360deg)}}
+@keyframes glow {0%,100% {box-shadow:0 0 7px #00ff7955} 50% {box-shadow:0 0 20px #00ff79aa}}
+@media(max-width:760px) {
+  header {padding:13px;flex-wrap:wrap}
+  .brand-icon {font-size:30px}
+  .server {display:none}
+  main {padding:10px}
+  .stats {gap:7px}
+  .stat {padding:10px 7px;gap:7px;display:block;text-align:center}
+  .stat-icon {font-size:21px}
+  .stat-label {font-size:10px;min-height:26px}
+  .stat-number {font-size:23px}
+  #map {height:58vh;min-height:330px}
+  .controls {grid-template-columns:1fr 1fr;padding:12px;gap:9px}
+  .controls input {grid-column:1/-1}
+  button {font-size:12px;padding:13px 7px;min-height:48px}
+  .legend {top:auto;bottom:12px;right:10px;font-size:10px;padding:7px 9px}
+  .map-top {font-size:12px;top:9px;left:9px}
+  .radar {width:65px;height:65px;right:12px;bottom:80px}
+}
+
+/* MANZIL QIDIRISH */
+.address-panel {position:relative;z-index:700;margin:0 0 15px;padding:16px;
+  background:linear-gradient(130deg,#071b3b,#031022);border:1px solid #078aca;
+  border-radius:17px;box-shadow:0 0 18px #007bff33}
+.address-heading {display:flex;align-items:center;gap:9px;margin-bottom:11px;
+  font-weight:bold;color:#dff5ff}
+.address-heading span {color:var(--blue);font-size:20px}
+.address-search-row {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px}
+.address-search-row input {min-width:0}
+.address-search-btn {border-radius:12px;padding:13px 20px;min-height:49px;
+  background:linear-gradient(110deg,#00549f,#00a9e8);border:1px solid #4bcaff;
+  box-shadow:0 0 15px #008cff55}
+.search-hint {font-size:12px;color:#8eaccd;margin-top:9px}
+.search-results {display:none;margin-top:9px;max-height:280px;overflow:auto;
+  border:1px solid #087fc5;border-radius:12px;background:#041329;box-shadow:0 12px 28px #0009}
+.search-results.show {display:block}
+.search-result {display:block;width:100%;min-height:0;text-align:left;border:0;
+  border-radius:0;border-bottom:1px solid #123858;padding:12px 14px;
+  background:transparent;color:#fff}
+.search-result:last-child {border-bottom:0}
+.search-result:hover {background:#0a2b4b;transform:none;filter:none}
+.search-result strong {display:block;font-size:14px;color:#e8f8ff}
+.search-result small {display:block;margin-top:4px;color:#91b5d7;font-size:11px;
+  line-height:1.45;font-weight:normal}
+.search-empty {padding:14px;color:#a9c4df;font-size:13px}
+.place-pin {width:38px;height:38px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  display:flex;align-items:center;justify-content:center;color:#fff;background:#ff315c;
+  border:2px solid #fff;box-shadow:0 0 16px #ff315c,0 0 30px #ff315c77}
+.place-pin span {transform:rotate(45deg);font-size:18px}
+.place-popup {min-width:190px;color:#10243a;line-height:1.45}
+.place-popup strong {display:block;font-size:14px;margin-bottom:5px}
+.place-popup small {color:#49647d}
+@media(max-width:760px) {
+  .address-panel {padding:12px;margin-bottom:10px}
+  .address-search-row {grid-template-columns:1fr}
+  .address-search-btn {width:100%}
+  .search-results {max-height:230px}
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="brand">
+    <div class="brand-icon">📍</div>
+    <div>
+      <h1>GEOTRACKER <span>GPS</span></h1>
+      <div class="subtitle">Jonli GPS kuzatuv tizimi</div>
+    </div>
+    <div class="live-pill">● LIVE</div>
+  </div>
+  <div class="server">Server holati: <strong id="serverStatus">ULANMOQDA...</strong></div>
+</header>
+
+<main>
+  <section class="stats">
+    <div class="stat"><div class="stat-icon">👥</div><div>
+      <div class="stat-label">Online foydalanuvchilar</div>
+      <div class="stat-number blue" id="onlineCount">0</div>
+    </div></div>
+    <div class="stat"><div class="stat-icon">🛰️</div><div>
+      <div class="stat-label">GPS foydalanuvchilar</div>
+      <div class="stat-number green" id="gpsCount">0</div>
+    </div></div>
+    <div class="stat"><div class="stat-icon">🖥️</div><div>
+      <div class="stat-label">Server holati</div>
+      <div class="stat-number green" id="serverCard">ONLINE</div>
+    </div></div>
+  </section>
+
+  <section class="address-panel">
+    <div class="address-heading"><span>⌕</span> Manzil, joy yoki obyekt qidirish</div>
+    <div class="address-search-row">
+      <input id="addressInput" type="search" autocomplete="off"
+        placeholder="Masalan: Amir Temur xiyoboni, Magic City yoki Toshkent, Chilonzor 12-mavze...">
+      <button class="address-search-btn" id="addressSearchButton">⌕ QIDIRISH</button>
+    </div>
+    <div class="search-hint">Joy nomi, ko‘cha, uy raqami, savdo markazi, park yoki boshqa obyekt nomini yozing.</div>
+    <div class="search-results" id="addressResults" role="listbox"
+      aria-label="Qidiruv natijalari"></div>
+  </section>
+
+  <section class="map-panel">
+    <div class="map-top">🗺️ Jonli xarita <span>●</span></div>
+    <div class="legend">
+      <div><i class="dot live"></i> LIVE</div>
+      <div><i class="dot blue"></i> GPS faol</div>
+    </div>
+    <div id="map"></div>
+    <div class="radar"></div>
+  </section>
+
+  <section class="controls">
+    <input id="username" maxlength="40" placeholder="👤 Ismingizni kiriting...">
+    <button class="btn-start" id="startButton">◎ GPS YOQISH</button>
+    <button class="btn-stop" id="stopButton">■ GPS O‘CHIRISH</button>
+    <button class="btn-locate" id="locateButton">➤ MENING JOYIMGA</button>
+  </section>
+
+  <div class="message" id="message">ℹ️ Tizim tayyor. Ismingizni kiriting va GPS ni yoqing.</div>
+</main>
+
+<footer>GEOTRACKER GPS · JONLI GPS TIZIMI ADMIN:FARRUX</footer>
+
+<script>
+    // SERVER VA XARITA
+const socket = io({
+  transports:["websocket","polling"]
+});
+
+const map = L.map("map", {
+  zoomControl:false
+}).setView([41.3111,69.2797],11);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom:19,
+  attribution:"&copy; OpenStreetMap"
+}).addTo(map);
+
+L.control.zoom({position:"topleft"}).addTo(map);
+
+const markers = {};
+let watchId = null;
+let lastPosition = null;
+let gpsActive = false;
+let firstLocation = true;
+let myName = "";
+
+const $ = id => document.getElementById(id);
+
+function say(text) {
+  $("message").textContent = text;
+}
+
+function setServer(online) {
+  $("serverStatus").textContent = online ? "ONLINE" : "UZILDI";
+  $("serverCard").textContent = online ? "ONLINE" : "OFFLINE";
+  $("serverCard").style.color = online ? "#00ff79" : "#ff315c";
+}
+
+socket.on("connect", () => {
+  setServer(true);
+  say("✅ Serverga ulanildi. GPS holatini tekshiring.");
+  if (gpsActive && lastPosition) sendLocation(lastPosition);
+});
+
+socket.on("disconnect", () => {
+  setServer(false);
+  say("⚠️ Server bilan aloqa uzildi. Qayta ulanish kutilmoqda...");
+});
+
+socket.on("online_count", data => {
+  $("onlineCount").textContent = data.count ?? 0;
+});
+
+socket.on("locations_update", data => {
+  renderLocations(data.locations || []);
+});
+
+function makeIcon() {
+  return L.divIcon({
+    className:"",
+    html:'<div class="user-pin green-pin"><span>👤</span></div>',
+    iconSize:[42,42],
+    iconAnchor:[21,40]
+  });
+}
+
+function renderLocations(users) {
+  const activeIds = new Set();
+
+  users.forEach(user => {
+    if (!user.id || !Number.isFinite(Number(user.lat)) ||
+        !Number.isFinite(Number(user.lon))) return;
+
+    activeIds.add(user.id);
+    const position = [Number(user.lat),Number(user.lon)];
+
+    if (markers[user.id]) {
+      markers[user.id].setLatLng(position);
+      markers[user.id].setTooltipContent(user.name || "Foydalanuvchi");
+    } else {
+      markers[user.id] = L.marker(position,{
+        icon:makeIcon()
+      }).addTo(map);
+
+      markers[user.id].bindTooltip(user.name || "Foydalanuvchi",{
+        permanent:true,
+        direction:"top",
+        offset:[0,-35],
+        className:"user-label"
+      });
+    }
+  });
+
+  Object.keys(markers).forEach(id => {
+    if (!activeIds.has(id)) {
+      map.removeLayer(markers[id]);
+      delete markers[id];
+    }
+  });
+
+  $("gpsCount").textContent = users.length;
+}
+
+function sendLocation(position) {
+  if (!socket.connected || !position || !myName) return;
+
+  socket.emit("location_update",{
+    name:myName,
+    lat:position.coords.latitude,
+    lon:position.coords.longitude
+  });
+}
+
+// GPS YOQISH
+function startGPS() {
+  myName = $("username").value.trim();
+
+  if (!myName) {
+    say("⚠️ Avval ismingizni kiriting.");
+    $("username").focus();
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    say("❌ Ushbu brauzer GPS ni qo‘llab-quvvatlamaydi.");
+    return;
+  }
+
+  if (location.protocol !== "https:" && location.hostname !== "localhost") {
+    say("⚠️ GPS uchun HTTPS ulanish kerak.");
+    return;
+  }
+
+  if (gpsActive) return;
+
+  gpsActive = true;
+  firstLocation = true;
+  say("📡 GPS ruxsati kutilmoqda... Brauzerda Allow tugmasini bosing.");
+
+  watchId = navigator.geolocation.watchPosition(position => {
+    lastPosition = position;
+    sendLocation(position);
+
+    if (firstLocation) {
+      map.setView([
+        position.coords.latitude,
+        position.coords.longitude
+      ],15);
+      firstLocation = false;
+    }
+
+    say("🟢 GPS faol. Joylashuvingiz ulashishga ruxsat bergan foydalanuvchilarga ko‘rinmoqda.");
+  },error => {
+    const messages = {
+      1:"GPS ruxsati berilmadi. Brauzer sozlamalarini tekshiring.",
+      2:"Joylashuv aniqlanmadi. GPS va internetni tekshiring.",
+      3:"GPS javobi kechikdi. Yana urinib ko‘ring."
+    };
+    say("⚠️ " + (messages[error.code] || "GPS xatoligi."));
+  },{
+    enableHighAccuracy:true,
+    maximumAge:5000,
+    timeout:20000
+  });
+}
+
+// GPS O‘CHIRISH
+function stopGPS() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+
+  gpsActive = false;
+  lastPosition = null;
+  firstLocation = true;
+
+  if (socket.connected) socket.emit("location_stop");
+
+  say("🔴 GPS o‘chirildi. Joylashuvingiz ulashilmayapti.");
+}
+
+function locateMe() {
+  if (!lastPosition) {
+    say("📍 Avval GPS ni yoqing.");
+    return;
+  }
+
+  map.setView([
+    lastPosition.coords.latitude,
+    lastPosition.coords.longitude
+  ],16,{animate:true});
+}
+
+$("startButton").addEventListener("click",startGPS);
+$("stopButton").addEventListener("click",stopGPS);
+$("locateButton").addEventListener("click",locateMe);
+
+
+// MANZIL QIDIRISH — OPENSTREETMAP PHOTON
+let addressMarker = null;
+let searchTimer = null;
+let searchController = null;
+let lastSearchQuery = "";
+let addressResults = [];
+
+function placeIcon() {
+  return L.divIcon({
+    className:"",
+    html:'<div class="place-pin"><span>📍</span></div>',
+    iconSize:[38,38],
+    iconAnchor:[19,36],
+    popupAnchor:[0,-34]
+  });
+}
+
+function placeAddress(p) {
+  const parts = [
+    p.housenumber,p.street,p.name,p.suburb,p.district,
+    p.city,p.county,p.state,p.country
+  ].filter(Boolean);
+
+  return [...new Set(parts)].join(", ");
+}
+
+function showSearchMessage(message) {
+  const box = $("addressResults");
+  box.innerHTML = "";
+
+  const item = document.createElement("div");
+  item.className = "search-empty";
+  item.textContent = message;
+
+  box.appendChild(item);
+  box.classList.add("show");
+}
+
+// TANLANGAN MANZILNI XARITADA BELGILASH
+function choosePlace(place) {
+  const p = place.properties || {};
+  const coords = place.geometry && place.geometry.coordinates;
+
+  if (!coords || !Number.isFinite(Number(coords[0])) ||
+      !Number.isFinite(Number(coords[1]))) {
+    say("⚠️ Bu manzil uchun xarita koordinatasi topilmadi.");
+    return;
+  }
+
+  const lat = Number(coords[1]);
+  const lon = Number(coords[0]);
+  const title = p.name || p.street || "Tanlangan joy";
+  const fullAddress = placeAddress(p) || p.name ||
+    "Manzil tafsiloti mavjud emas";
+  const category = [p.osm_key,p.osm_value,p.type]
+    .filter(Boolean).join(" · ") || "Joy";
+
+  if (addressMarker) map.removeLayer(addressMarker);
+
+  addressMarker = L.marker([lat,lon],{
+    icon:placeIcon(),
+    zIndexOffset:1000
+  }).addTo(map);
+
+  const popup = document.createElement("div");
+  popup.className = "place-popup";
+
+  const nameEl = document.createElement("strong");
+  nameEl.textContent = title;
+
+  const addressEl = document.createElement("div");
+  addressEl.textContent = fullAddress;
+
+  const infoEl = document.createElement("small");
+  infoEl.textContent = category + " · " +
+    lat.toFixed(6) + ", " + lon.toFixed(6);
+
+  popup.append(nameEl,addressEl,infoEl);
+
+  addressMarker.bindPopup(popup).openPopup();
+  map.flyTo([lat,lon],17,{duration:1.2});
+
+  $("addressResults").classList.remove("show");
+  $("addressInput").value = fullAddress;
+
+  say("📍 Manzil xaritada belgilandi: " + fullAddress);
+}
+
+// QIDIRUV NATIJALARINI CHIQARISH
+function renderAddressResults(features) {
+  const box = $("addressResults");
+  box.innerHTML = "";
+  addressResults = features || [];
+
+  if (!addressResults.length) {
+    showSearchMessage("Bu nom bo‘yicha joy topilmadi. Boshqacha yozib ko‘ring.");
+    return;
+  }
+
+  addressResults.forEach((feature,index) => {
+    const p = feature.properties || {};
+    const title = p.name || p.street || p.city || "Nomsiz joy";
+    const detail = placeAddress(p) || p.country ||
+      "Manzil tafsiloti mavjud emas";
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "search-result";
+
+    const strong = document.createElement("strong");
+    strong.textContent = title;
+
+    const small = document.createElement("small");
+    small.textContent = detail;
+
+    button.append(strong,small);
+
+    button.addEventListener("click",() => {
+      choosePlace(addressResults[index]);
+    });
+
+    box.appendChild(button);
+  });
+
+  box.classList.add("show");
+}
+
+// PHOTON API ORQALI MANZIL QIDIRISH
+async function searchAddress() {
+  const input = $("addressInput");
+  const query = input.value.trim();
+
+  if (query.length < 3) {
+    showSearchMessage("Kamida 3 ta harf kiriting.");
+    return;
+  }
+
+  if (query === lastSearchQuery && addressResults.length) {
+    renderAddressResults(addressResults);
+    return;
+  }
+
+  if (searchController) searchController.abort();
+
+  searchController = new AbortController();
+  lastSearchQuery = query;
+
+  showSearchMessage("🔎 Manzillar qidirilmoqda...");
+  say("🔎 Manzil bazadan qidirilmoqda...");
+
+  try {
+    const params = new URLSearchParams({
+      q:query,
+      limit:"7",
+      lang:"ru"
+    });
+
+    const response = await fetch(
+      "https://photon.komoot.io/api/?" + params.toString(),
+      {
+        signal:searchController.signal,
+        headers:{"Accept":"application/json"}
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Geokoder javob bermadi (" + response.status + ")");
+    }
+
+    const data = await response.json();
+
+    renderAddressResults(data.features || []);
+
+    if (!data.features || !data.features.length) {
+      say("Joy topilmadi. Manzilni aniqroq yozing.");
+    } else {
+      say("✅ " + data.features.length +
+        " ta mos joy topildi. Keraklisini tanlang.");
+    }
+
+  } catch (error) {
+    if (error.name === "AbortError") return;
+
+    showSearchMessage(
+      "Qidiruv xizmati vaqtincha ishlamayapti. Keyinroq urinib ko‘ring."
+    );
+
+    say("⚠️ Manzil qidirishda xatolik: " + error.message);
+  }
+}
+
+$("addressSearchButton").addEventListener("click",searchAddress);
+
+$("addressInput").addEventListener("keydown",event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    searchAddress();
+  }
+
+  if (event.key === "Escape") {
+    $("addressResults").classList.remove("show");
+  }
+});
+
+// YOZGANDA AVTOMATIK QIDIRISH
+$("addressInput").addEventListener("input",() => {
+  clearTimeout(searchTimer);
+
+  const query = $("addressInput").value.trim();
+
+  if (query.length < 3) {
+    $("addressResults").classList.remove("show");
+    return;
+  }
+
+  searchTimer = setTimeout(searchAddress,750);
+});
+
+// QIDIRUV RO‘YXATINI TASHQARIGA BOSGANDA YOPISH
+document.addEventListener("click",event => {
+  if (!event.target.closest(".address-panel")) {
+    $("addressResults").classList.remove("show");
+  }
+});
+
+// SAHIFA YOPILGANDA GPS ULASHUVINI TO‘XTATISH
+window.addEventListener("beforeunload",() => {
+  if (gpsActive && socket.connected) {
+    socket.emit("location_stop");
+  }
+});
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GEOTRACKER GPS PRO</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -719,7 +1392,7 @@ window.addEventListener("beforeunload",()=>{
 </script>
 </body>
 </html>
-
+ -->
 
 
 
