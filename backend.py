@@ -29,13 +29,20 @@ CORS(app, resources={
     }
 })
 
-# Online brauzer ulanishlari
+# Umumiy foydalanuvchilar holati
 online_users = set()
-online_lock = Lock()
+locations = {}
+
+state_lock = Lock()
+
+
+def get_locations():
+    with state_lock:
+        return list(locations.values())
 
 
 def broadcast_online_count():
-    with online_lock:
+    with state_lock:
         count = len(online_users)
 
     socketio.emit("online_count", {
@@ -43,20 +50,70 @@ def broadcast_online_count():
     })
 
 
+def broadcast_locations():
+    socketio.emit("locations_update", {
+        "locations": get_locations()
+    })
+
+
 @socketio.on("connect")
 def handle_connect(auth=None):
-    with online_lock:
+    with state_lock:
         online_users.add(request.sid)
 
     broadcast_online_count()
 
+    emit("locations_update", {
+        "locations": get_locations()
+    })
+
+
+@socketio.on("location_update")
+def handle_location_update(data):
+    if not isinstance(data, dict):
+        return
+
+    name = str(data.get("name", "")).strip()[:40]
+
+    try:
+        lat = float(data.get("lat"))
+        lon = float(data.get("lon"))
+    except (TypeError, ValueError):
+        return
+
+    if not name:
+        return
+
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        return
+
+    with state_lock:
+        locations[request.sid] = {
+            "id": request.sid,
+            "name": name,
+            "lat": lat,
+            "lon": lon
+        }
+
+    broadcast_locations()
+
+
+@socketio.on("location_stop")
+def handle_location_stop():
+    with state_lock:
+        locations.pop(request.sid, None)
+
+    broadcast_locations()
+
 
 @socketio.on("disconnect")
 def handle_disconnect(reason=None):
-    with online_lock:
+    with state_lock:
         online_users.discard(request.sid)
+        locations.pop(request.sid, None)
 
     broadcast_online_count()
+    broadcast_locations()
 
 
 @app.route("/")
@@ -71,9 +128,14 @@ def home():
 
 @app.route("/api/status")
 def status():
+    with state_lock:
+        count = len(online_users)
+        gps_count = len(locations)
+
     return jsonify({
         "status": "online",
-        "online_users": len(online_users)
+        "online_users": count,
+        "gps_users": gps_count
     })
 
 
